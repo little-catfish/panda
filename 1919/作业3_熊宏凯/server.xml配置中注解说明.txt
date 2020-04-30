@@ -1,0 +1,97 @@
+ 1 <Server port="8005" shutdown="SHUTDOWN">
+<!--//Server代表整个tomcat容器可以有多个Service元素  
+port表示指定一个端口复制监听关闭 tomcat的请求  
+shutdown 指定向端口发送的命令字符串    -->
+
+ 2   <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+<!-- //  当Tomcat启动时，该监听器记录Tomcat、Java和操作系统的信息。该监听器必须是配置的第一个监听器。-->
+ 
+3   <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+<!--//  Tomcat启动时，检查APR库，如果存在则加载 -->
+
+ 4   <Listener className="org.apache.catalina.core.JasperListener" />
+<!--//  在Web应用启动之前初始化Jasper，Jasper是JSP引擎，把JVM不认识的JSP文件解析成java文件，然后编译成class文件供JVM使用 -->
+
+ 5   <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+<!--//  与类加载器导致的内存泄露有关 -->
+
+ 6   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+<!--//   通过该监听器，初始化< GlobalNamingResources>标签中定义的全局JNDI资源；如果没有该监听器，任何全局资源都不能使用-->
+
+ 7   <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+<!-- // Web应用因thread-local导致的内存泄露而要停止时，该监听器会触发线程池中线程的更新 -->
+ 8 
+ 9   <GlobalNamingResources>
+10     <Resource name="UserDatabase" auth="Container"
+11               type="org.apache.catalina.UserDatabase"
+12               description="User database that can be updated and saved"
+13               factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+14               pathname="conf/tomcat-users.xml" />
+15   </GlobalNamingResources>
+<!--// GlobalNamingResources元素定义了全局资源，通过配置可以看出，加载用户的数据库，
+该配置是通过读取 conf/tomcat-users.xml实现的-->
+16  
+17   <Service name="Catalina">
+<!--// Service的作用，是在Connector和Engine外面包了一层，把它们组装在一起，对外提供服务。
+一个Service可以包含多个Connector，但是只能包含一个Engine  -->
+
+18     <Connector port="8080" protocol="HTTP/1.1"
+19                connectionTimeout="20000"
+20                redirectPort="8443" />
+<!--//Connector的主要功能，是接收连接请求,后分配线程让Engine来处理这个请求,
+客户端可以通过8080端口号使用http协议访问Tomcat。
+其中，protocol属性规定了请求的协议，port规定了请求的端口号，
+redirectPort表示当强制要求https而请求是http时，
+重定向至端口号为8443的Connector，
+connectionTimeout表示连接的超时时间    -->
+
+21     <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" />
+<!--//客户端可以通过8009端口号使用AJP协议访问Tomcat。
+AJP协议负责和其他的HTTP服务器(如Apache)建立连接  
+edirectPort表示当强制要求https而请求是http时，
+重定向至端口号为8443的Connector  -->
+
+22     <Engine name="Catalina" defaultHost="localhost">
+<!--//Engine组件在Service组件中有且只有一个；
+Engine是Service组件中的请求处理组件 ,
+defaultHost属性指定了默认的host名称，
+当发往本机的请求指定的host名称不存在时，一律使用defaultHost指定的host进行处理-->
+
+23       <Realm className="org.apache.catalina.realm.LockOutRealm">
+24         <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+25                resourceName="UserDatabase"/>
+26       </Realm>
+<!--// Realm域提供了一种用户密码与web应用的映射关系。  -->
+27  
+28       <Host name="localhost"  appBase="webapps"
+29             unpackWARs="true" autoDeploy="true">
+<!--// name属性指定虚拟主机的主机名，
+一个Engine中有且仅有一个Host组件的name属性与Engine组件的defaultHost属性相匹配
+；一般情况下，主机名需要是在DNS服务器中注册的网络名，但是Engine指定的defaultHost不需要，
+原因在前面已经说明;appBase属性指定Web应用所在的目录，
+默认值是webapps，这是一个相对路径，代表Tomcat根目录下webapps文件;
+unpackWARs指定了是否将代表Web应用的WAR文件解压；如果为true，通过解压后的文件结构运行该Web应用，如果为false，直接使用WAR文件运行Web应用。
+utoDeploy为true时，Tomcat在运行时定期检查新的Web应用或Web应用的更新-->
+
+30         <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+31                prefix="localhost_access_log." suffix=".txt"
+32                pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+<!--//Valve的意思是“阀门”，在Tomcat中代表了请求处理流水线上的一个组件  
+AccessLogValve记录的日志就是访问日志，每天的请求会写到一个日志文件里；
+className：规定了Valve的类型，通过该属性规定了这是一个AccessLogValve。
+directory：指定日志存储的位置，日志存储在$TOMCAT_HOME/logs目录下。
+prefix：指定了日志文件的前缀。
+suffix：指定了日志文件的后缀。。 
+pattern：指定记录日志的格式  
+%h：远程主机名或IP地址；
+%l：远程逻辑用户名；
+%u：授权的远程用户名；
+%t：访问的时间；
+%r：请求的第一行，即请求方法(get/post等)、uri、及协议
+%s：响应状态，200,404；
+%b：响应的数据量，不包括请求头
+%D，含义是请求处理的时间(单位是毫秒)-->
+33       </Host>
+34     </Engine>
+35   </Service>
+36 </Server>
